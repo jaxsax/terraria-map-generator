@@ -80,9 +80,14 @@ bool readFileIntoMemory(uint8_t *buffer, const char *filename,
   return true;
 }
 
-int main() {
-  /*const char *filename = "v1-3-0-7_Small_Corruption.wld";*/
-  const char *filename = "ShangWei_V1_100917.wld";
+int main(int argc, const char **argv) {
+
+  if (argc < 2) {
+    printf("Usage: %s <wld file location>\n", argv[0]);
+    return -1;
+  }
+
+  const char *filename = argv[1];
 
   struct stat file_info;
   if (stat(filename, &file_info) != 0) {
