@@ -1,18 +1,4 @@
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-typedef struct _FileFormatHeader {
-  uint32_t currentRelease;
-  uint64_t magicNumber;
-  uint32_t revision;
-  uint64_t unknown_param1;
-  uint32_t sectionCount;
-} FileFormatHeader;
+#include "main.h"
 
 uint8_t *readUint8(uint8_t *buffer, uint8_t *data) {
   *data = *buffer;
@@ -20,14 +6,15 @@ uint8_t *readUint8(uint8_t *buffer, uint8_t *data) {
   return buffer;
 }
 
-uint8_t *readShort(uint8_t *buffer, short *data) {
-  *data = (*(buffer + 1) << 8) | *buffer;
+uint8_t *readUint16(uint8_t *buffer, uint16_t *data) {
+  *data = (uint16_t)(*(buffer + 1) << 8) | *buffer;
   buffer = buffer + 2;
   return buffer;
 }
 
 uint8_t *readUint32(uint8_t *buffer, uint32_t *data) {
-  *data = (*(buffer + 3) << 24) | (*(buffer + 2) << 16) | (*(buffer + 1) << 8) |
+  *data = ((uint32_t) * (buffer + 3) << 24) |
+          ((uint32_t) * (buffer + 2) << 16) | ((uint32_t) * (buffer + 1) << 8) |
           *buffer;
   buffer = buffer + 4;
   return buffer;
@@ -49,8 +36,8 @@ bool parseFileFormatHeader(uint8_t *buffer, FileFormatHeader *data) {
   buffer = readUint32(buffer, &data->revision);
   buffer = readUint64(buffer, &data->unknown_param1);
 
-  short sections = 0;
-  buffer = readShort(buffer, &sections);
+  uint16_t sections = 0;
+  buffer = readUint16(buffer, &sections);
   for (short i = 0; i < sections; i++) {
     uint32_t section_id = 0;
     buffer = readUint32(buffer, &section_id);
@@ -65,7 +52,7 @@ bool parseFileFormatHeader(uint8_t *buffer, FileFormatHeader *data) {
 }
 
 bool readFileIntoMemory(uint8_t *buffer, const char *filename,
-                        uint32_t file_size) {
+                        size_t file_size) {
   FILE *fp = fopen(filename, "rb");
   if (fp == NULL) {
     printf("Failed to read %s into memory\n", filename);
@@ -95,16 +82,17 @@ int main(int argc, const char **argv) {
     return 1;
   }
 
+  size_t file_size = (size_t)file_info.st_size;
   uint8_t *buffer = NULL;
-  buffer = (uint8_t *)malloc(file_info.st_size);
+  buffer = (uint8_t *)malloc(file_size);
   if (buffer == NULL) {
-    printf("Failure to allocate %lu bytes\n", file_info.st_size);
+    printf("Failure to allocate %lu bytes\n", file_size);
     return 1;
   }
 
   FileFormatHeader file_format;
 
-  readFileIntoMemory(buffer, filename, file_info.st_size);
+  readFileIntoMemory(buffer, filename, file_size);
   parseFileFormatHeader(buffer, &file_format);
   free(buffer);
 

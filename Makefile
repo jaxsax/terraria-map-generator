@@ -2,10 +2,10 @@
 BINDIR := bin
 
 CC=clang
-CFLAGS=-Weverything
+CFLAGS=-Weverything -Wno-padded --std=c11
 
-$(BINDIR)/main: main.c | $(BINDIR)
+$(BINDIR)/main: main.c main.h | $(BINDIR)
 	$(CC) $(CFLAGS) -o $@ $<
 
 $(BINDIR):
-	mkdir $(BINDIR)
+	mkdir -p $(BINDIR)
