@@ -13,7 +13,8 @@ typedef struct _FileFormatHeader {
   uint64_t magicNumber;
   uint32_t revision;
   uint64_t unknown_param1;
-  uint32_t sectionCount;
+  uint16_t sectionCount;
+  uint16_t tileTypeCount;
 } FileFormatHeader;
 
 uint8_t *readUint8(uint8_t *buffer, uint8_t *data);
@@ -21,6 +22,6 @@ uint8_t *readUint16(uint8_t *buffer, uint16_t *data);
 uint8_t *readUint32(uint8_t *buffer, uint32_t *data);
 uint8_t *readUint64(uint8_t *buffer, uint64_t *data);
 
-bool parseFileFormatHeader(uint8_t *buffer, FileFormatHeader *data);
+bool parseFileFormatHeader(uint8_t **buffer, FileFormatHeader *data);
 bool readFileIntoMemory(uint8_t *buffer, const char *filename,
                         size_t file_size);
