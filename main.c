@@ -30,6 +30,19 @@ uint8_t *readUint64(uint8_t *buffer, uint64_t *data) {
   return buffer;
 }
 
+uint8_t *readString(uint8_t *buffer, char **data) {
+  uint8_t str_length = 0;
+  buffer = readUint8(buffer, &str_length);
+
+  char *str_data = calloc(sizeof(char), str_length + 1);
+  str_data = strncpy(str_data, (char *)buffer, str_length);
+
+  *data = str_data;
+  buffer = buffer + str_length;
+
+  return buffer;
+}
+
 bool parseFileFormatHeader(uint8_t **buffer, FileFormatHeader *data) {
   uint8_t *temp_buffer = *buffer;
   temp_buffer = readUint32(temp_buffer, &data->currentRelease);
@@ -75,6 +88,13 @@ bool parseFileFormatHeader(uint8_t **buffer, FileFormatHeader *data) {
   return true;
 }
 
+bool parseWorldHeader(uint8_t **buffer, WorldHeader *data) {
+  uint8_t *temp_buffer = *buffer;
+  temp_buffer = readString(temp_buffer, &data->worldName);
+
+  return true;
+}
+
 bool readFileIntoMemory(uint8_t *buffer, const char *filename,
                         size_t file_size) {
   FILE *fp = fopen(filename, "rb");
@@ -103,12 +123,28 @@ static void printFileFormatHeader(FileFormatHeader header) {
   printf("tile_types: %u\n", header.tileTypeCount);
 }
 
+static void printWorldHeader(WorldHeader header) {
+  printf("world_name: %s\n", header.worldName);
+}
+
 static void cleanup(uint8_t *buffer) {
   if (!buffer) {
     return;
   }
 
   free(buffer);
+}
+
+static void cleanupWorldHeader(WorldHeader *header) {
+  if (!header) {
+    return;
+  }
+
+  if (!header->worldName) {
+    return;
+  }
+
+  free(header->worldName);
 }
 
 int main(int argc, const char **argv) {
@@ -140,6 +176,7 @@ int main(int argc, const char **argv) {
    */
   uint8_t *intermediate_buffer = buffer;
   FileFormatHeader file_format;
+  WorldHeader world_header;
 
   readFileIntoMemory(buffer, filename, file_size);
   bool parseFileHeaderSuccess =
@@ -152,8 +189,21 @@ int main(int argc, const char **argv) {
     return 1;
   }
 
+  bool parseWorldHeaderSuccess =
+      parseWorldHeader(&intermediate_buffer, &world_header);
+
+  if (!parseWorldHeaderSuccess) {
+    printf("Error parsing world header\n");
+
+    cleanup(buffer);
+    cleanupWorldHeader(&world_header);
+    return 1;
+  }
+
   printFileFormatHeader(file_format);
+  printWorldHeader(world_header);
 
   cleanup(buffer);
+  cleanupWorldHeader(&world_header);
   return 0;
 }
